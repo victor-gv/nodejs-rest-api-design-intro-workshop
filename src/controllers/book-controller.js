@@ -35,7 +35,23 @@ const { logger } = require("../config/config");
  * Wrap the code in a try/catch statement and call next(error)
  * with the error object that is caught
  */
-async function createBook() {}
+async function createBook() {
+  try {
+    const { title, author, genre, year, pages } = req.body;
+
+    const book = await db.Book.create({
+      title: title,
+      author: author,
+      genre: genre,
+      year: year,
+      pages: pages,
+    });
+
+    res.status(201).json({ data: book._id });
+  } catch (error) {
+    next(error);
+  }
+}
 
 /**
  * 1. Create the book CRUD controllers
@@ -54,7 +70,15 @@ async function createBook() {}
  *
  * And call lean() and exec() on the query
  */
-async function getBooks() {}
+async function getBooks(req, res, next) {
+  try {
+    const books = await db.Book.find({}, { _id: 1, title: 1 }).lean().exec();
+
+    res.status(200).send({ data: books });
+  } catch (error) {
+    next(error);
+  }
+}
 
 /**
  * 1. Create the book CRUD controllers
@@ -88,7 +112,21 @@ async function getBooks() {}
  *
  * And call lean() and exec() on the query
  */
-async function getSingleBook() {}
+async function getSingleBook() {
+  try {
+    const book = await db.Book.findById(req.params.id)
+      .populate({
+        path: "author",
+        select: { _id: 1, firstName: 1, lastName: 1 },
+      })
+      .lean()
+      .exec();
+
+    res.status(200).json({ data: book });
+  } catch (error) {
+    next(error);
+  }
+}
 
 /**
  * 1. Create the book CRUD controllers
@@ -115,7 +153,27 @@ async function getSingleBook() {}
  * Wrap the code in a try/catch statement and call next(error)
  * with the error object that is caught
  */
-async function updateBook() {}
+async function updateBook() {
+  const { title, pages } = req.body;
+  const { bookId } = req.params;
+
+  try {
+    const book = await db.Book.findOneAndUpdate(
+      { _id: bookId },
+      {
+        $set: {
+          title: title,
+          pages: pages,
+        },
+      },
+      { new: true },
+    );
+
+    res.status(200).json({ data: book });
+  } catch (error) {
+    next(error);
+  }
+}
 
 /**
  * 1. Create the book CRUD controllers
@@ -135,7 +193,17 @@ async function updateBook() {}
  * Wrap the code in a try/catch statement and call next(error)
  * with the error object that is caught
  */
-async function deleteBook() {}
+async function deleteBook() {
+  const bookId = req.params;
+
+  try {
+    const book = await db.Book.findOneAndDelete({ _id: bookId });
+
+    res.status(200).json({ data: { _id: book._id } });
+  } catch (error) {
+    next(error);
+  }
+}
 
 module.exports = {
   createBook: createBook,
